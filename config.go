@@ -41,7 +41,7 @@ func loadConfig(profile string) (*config, string, error) {
 		for _, name := range names {
 			name = filepath.Base(name)
 			name = strings.TrimLeft(name[6:len(name)-5], "-")
-			fmt.Println(name)
+			//fmt.Println(name)
 		}
 		os.Exit(0)
 	} else {

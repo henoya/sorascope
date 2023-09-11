@@ -34,16 +34,28 @@ func main() {
 		},
 		Commands: []*cli.Command{
 			{
-				Name:        "show-posts",
-				Description: "Show posts",
-				Usage:       "Show posts",
-				UsageText:   AppName + " show-posts",
+				Name:        "get-posts",
+				Description: "Get account's all posts",
+				Usage:       "get-posts -H handle [-n number] [--json]",
+				UsageText:   AppName + " get-posts",
+				Flags: []cli.Flag{
+					&cli.StringFlag{Name: "handle", Aliases: []string{"H"}, Required: true, Usage: "user handle or DID"},
+					&cli.IntFlag{Name: "n", Value: 30, Usage: "number of items"},
+					&cli.BoolFlag{Name: "json", Usage: "output JSON"},
+				},
+				Action: doGetPosts,
+			},
+			{
+				Name:        "get-blocks",
+				Description: "get-blocks",
+				Usage:       "get-blocks",
+				UsageText:   AppName + " get-blocks",
 				Flags: []cli.Flag{
 					&cli.StringFlag{Name: "handle", Aliases: []string{"H"}, Value: "", Usage: "user handle"},
 					&cli.IntFlag{Name: "n", Value: 30, Usage: "number of items"},
 					&cli.BoolFlag{Name: "json", Usage: "output JSON"},
 				},
-				Action: doShowPosts,
+				Action: doGetBlocks,
 			},
 			{
 				Name:        "show-session",

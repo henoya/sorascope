@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"time"
 
@@ -101,6 +102,25 @@ func timep(s string) time.Time {
 	panic(s)
 }
 
+func timepWithError(s string) (t *time.Time, err error) {
+	for _, f := range formats {
+		t, err := time.Parse(f, s)
+		if err == nil {
+			t = t.Local()
+			return &t, nil
+		}
+	}
+	return nil, fmt.Errorf("invalid time: %s", s)
+}
+
+func IsNilType(x interface{}) bool {
+	if (x == nil) || reflect.ValueOf(x).IsNil() {
+		return true
+	} else {
+		return false
+	}
+}
+
 func int64p(i *int64) int64 {
 	if i == nil {
 		return 0
@@ -124,7 +144,7 @@ func makeXRPCC(cCtx *cli.Context) (*xrpc.Client, error) {
 		Auth:   &xrpc.AuthInfo{Handle: cfg.Handle},
 	}
 
-	fmt.Printf("config dir: %s...\n", cfg.dir)
+	//fmt.Printf("config dir: %s...\n", cfg.dir)
 	auth, err := cliutil.ReadAuth(filepath.Join(cfg.dir, cfg.prefix+cfg.Handle+".auth"))
 	if err == nil {
 		xrpcc.Auth = auth
