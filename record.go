@@ -13,6 +13,9 @@ type AtUri string
 type Cid string
 type PostUri string
 type OwnerId Did
+type Tid string
+type PostRecordId string
+type PostHistroyId string
 type PostRecords []*PostRecord
 
 type Image struct {
@@ -66,25 +69,26 @@ type AuthorRecord struct {
 }
 
 type PostStatus struct {
-	Id          int64       `json:"id" gorm:"type:integer;primary_key"`
-	Cid         Cid         `json:"cid" gorm:"type:text;index:idx_post_status_cid"`
-	Did         Did         `json:"did" gorm:"type:text;index:idx_post_status_did"`
-	Uri         AtUri       `json:"uri" gorm:"type:text;index:idx_post_status_uri"`
-	LikeCount   int64       `json:"like_count" gorm:"type:integer"`
-	ReplyCount  int64       `json:"reply_count" gorm:"type:integer"`
-	RepostCount int64       `json:"repost_count" gorm:"type:integer"`
-	Labels      StringArray `json:"labels" gorm:"type:text;serializer:json"`
-	Json        string      `json:"json" gorm:"type:text"`
-	CreatedAt   *time.Time  `json:"created_at" gorm:"type:datetime;index:idx_post_status_created_at"`
-	UpdatedAt   *time.Time  `json:"updated_at" gorm:"type:datetime;index:idx_post_status_updated_at"`
-	DeletedAr   *time.Time  `json:"deleted_ar" gorm:"type:datetime;nullable:index:idx_post_status_deleted_at"`
+	Id          PostRecordId `json:"id" gorm:"type:text;primary_key"`
+	Cid         Cid          `json:"cid" gorm:"type:text;index:idx_post_status_cid"`
+	Did         Did          `json:"did" gorm:"type:text;index:idx_post_status_did"`
+	Uri         AtUri        `json:"uri" gorm:"type:text;index:idx_post_status_uri"`
+	LikeCount   int64        `json:"like_count" gorm:"type:integer"`
+	ReplyCount  int64        `json:"reply_count" gorm:"type:integer"`
+	RepostCount int64        `json:"repost_count" gorm:"type:integer"`
+	Labels      StringArray  `json:"labels" gorm:"type:text;serializer:json"`
+	Json        string       `json:"json" gorm:"type:text"`
+	CreatedAt   *time.Time   `json:"created_at" gorm:"type:datetime;index:idx_post_status_created_at"`
+	UpdatedAt   *time.Time   `json:"updated_at" gorm:"type:datetime;index:idx_post_status_updated_at"`
+	DeletedAr   *time.Time   `json:"deleted_ar" gorm:"type:datetime;nullable:index:idx_post_status_deleted_at"`
 }
 
 type PostRecord struct {
-	Id             int64          `json:"id" gorm:"type:integer;primary_key;auto_increment"`
+	Id             PostRecordId   `json:"id" gorm:"type:text;primary_key"`
 	Cid            Cid            `json:"cid" gorm:"type:text;index:idx_post_record_cid"`
 	Did            Did            `json:"did" gorm:"type:text;index:idx_post_record_did"`
 	Uri            AtUri          `json:"uri" gorm:"type:text;index:idx_post_record_uri"`
+	Tid            Tid            `json:"tid" gorm:"type:text;index:idx_post_record_tid"`
 	AuthorRevision int            `json:"author_revision" gorm:"type:integer"`
 	CreatedAt      *time.Time     `json:"created_at" gorm:"type:datetime;index:idx_post_record_created_at"`
 	IndexedAt      *time.Time     `json:"indexed_at" gorm:"type:datetime;index:idx_post_record_indexed_at"`
@@ -102,22 +106,23 @@ type PostRecord struct {
 }
 
 type PostHistoryStatus struct {
-	Id        int64   `json:"id" gorm:"type:integer;primary_key"`                         // id
-	Owner     OwnerId `json:"owner" gorm:"type:text;index:idx_post_history_status_owner"` // ポスト履歴の所持者(所持者のDID
-	Cid       Cid     `json:"cid" gorm:"type:text;index:idx_post_history_status_cid"`     // ポストのCID
-	Uri       AtUri   `json:"uri" gorm:"type:text;index:idx_post_history_status_uri"`     // ポストのuri
-	BlockedBy bool    `json:"blocked_by" gorm:"type:boolean"`                             // ブロックされている
-	Muted     bool    `json:"muted" gorm:"type:boolean"`                                  // ミュートされている
+	Id        PostHistroyId `json:"id" gorm:"type:text;primary_key"`                            // id
+	Owner     OwnerId       `json:"owner" gorm:"type:text;index:idx_post_history_status_owner"` // ポスト履歴の所持者(所持者のDID
+	Cid       Cid           `json:"cid" gorm:"type:text;index:idx_post_history_status_cid"`     // ポストのCID
+	Uri       AtUri         `json:"uri" gorm:"type:text;index:idx_post_history_status_uri"`     // ポストのuri
+	BlockedBy bool          `json:"blocked_by" gorm:"type:boolean"`                             // ブロックされている
+	Muted     bool          `json:"muted" gorm:"type:boolean"`                                  // ミュートされている
 }
 
 type PostHistories []*PostHistory
 
 type PostHistory struct {
-	Id           int64             `json:"id" gorm:"type:integer;primary_key;auto_increment"`                 // id
-	Owner        OwnerId           `json:"owner" gorm:"type:text;index:idx_post_history_owner"`               // ポスト履歴の所持者(所持者のDID
-	Did          Did               `json:"did" gorm:"type:text;index:idx_post_history_did"`                   // ポストの投稿者のDID
-	Cid          Cid               `json:"cid" gorm:"type:text;index:idx_post_history_cid"`                   // ポストのCID
-	Uri          AtUri             `json:"uri" gorm:"type:text;index:idx_post_history_uri"`                   // ポストのuri
+	Id           PostHistroyId     `json:"id" gorm:"type:text;primary_key"`                     // id
+	Owner        OwnerId           `json:"owner" gorm:"type:text;index:idx_post_history_owner"` // ポスト履歴の所持者(所持者のDID
+	Did          Did               `json:"did" gorm:"type:text;index:idx_post_history_did"`     // ポストの投稿者のDID
+	Cid          Cid               `json:"cid" gorm:"type:text;index:idx_post_history_cid"`     // ポストのCID
+	Uri          AtUri             `json:"uri" gorm:"type:text;index:idx_post_history_uri"`     // ポストのuri
+	Tid          Tid               `json:"tid" gorm:"type:text;index:idx_post_history_tid"`
 	PostFeedType enum.PostFeedType `json:"post_feed_type" gorm:"type:integer"`                                // ポストがfeedに出てきた理由(repost)
 	CreatedAt    *time.Time        `json:"created_at" gorm:"type:datetime;index:idx_post_history_created_at"` // 作成日時
 	IndexedAt    *time.Time        `json:"indexed_at" gorm:"type:datetime;index:idx_post_history_indexed_at"` // インデックス日時

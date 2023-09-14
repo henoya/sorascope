@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.1
 
 require (
-	github.com/bluesky-social/indigo v0.0.0-20230830042519-9caaa233dc6b
+	github.com/bluesky-social/indigo v0.0.0-20230913175109-8a590beccaf5
 	github.com/fatih/color v1.15.0
 	github.com/mattn/go-sqlite3 v1.14.15
 	github.com/urfave/cli/v2 v2.25.7
@@ -29,6 +29,8 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.2 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
+	github.com/hashicorp/golang-lru/arc/v2 v2.0.6 // indirect
+	github.com/hashicorp/golang-lru/v2 v2.0.6 // indirect
 	github.com/ipfs/bbloom v0.0.4 // indirect
 	github.com/ipfs/go-block-format v0.1.2 // indirect
 	github.com/ipfs/go-cid v0.4.1 // indirect

@@ -2,9 +2,14 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	comatapi "github.com/bluesky-social/indigo/api"
+	comatproto "github.com/bluesky-social/indigo/api/atproto"
 	"github.com/bluesky-social/indigo/api/bsky"
+	"github.com/bluesky-social/indigo/util/cliutil"
 	"github.com/henoya/sorascope/enum"
 	"github.com/urfave/cli/v2"
 	"gorm.io/gorm"
@@ -35,22 +40,37 @@ func doGetPosts(cCtx *cli.Context) (err error) {
 	if err != nil {
 		return fmt.Errorf("cannot create client: %w", err)
 	}
+	ctx := context.Background()
 
 	var feed []*bsky.FeedDefs_FeedViewPost
 
 	n := cCtx.Int64("n")
 	handle := cCtx.String("handle")
+	handleDid := Did("")
 	if handle == "" || handle == "self" {
-		handle = xrpcc.Auth.Did
+		handleDid = Did(xrpcc.Auth.Did)
+		s := cliutil.GetDidResolver(cCtx)
+		phr := &comatapi.ProdHandleResolver{}
+		handle, _, err = comatapi.ResolveDidToHandle(ctx, xrpcc, s, phr, string(handleDid))
+		if err != nil {
+			return fmt.Errorf("failed to resolve handle: %w", err)
+		}
+	} else {
+		resolvHandle, err := comatproto.IdentityResolveHandle(ctx, xrpcc, handle)
+		if err != nil {
+			return fmt.Errorf("failed to resolve handle: %w", err)
+		}
+		handleDid = Did(resolvHandle.Did)
 	}
+
 	doAllPages := true
 
-	ownerId := xrpcc.Auth.Did
+	ownerId := OwnerId(handleDid)
 	recordCount := int64(0)
 
 	var cursor string
 	for {
-		resp, err := bsky.FeedGetAuthorFeed(context.TODO(), xrpcc, handle, cursor, "posts_with_replies", n)
+		resp, err := bsky.FeedGetAuthorFeed(context.TODO(), xrpcc, string(ownerId), cursor, "posts_with_replies", n)
 		if err != nil {
 			return fmt.Errorf("cannot get author feed: %w", err)
 		}
@@ -87,16 +107,14 @@ func doGetPosts(cCtx *cli.Context) (err error) {
 
 			// PostRecordに記録
 			recordCount = recordCount + 1
-			if p.Post.Cid == "bafyreihvvjvqjpighfkwvnsbag6jgbh2ijmpzq2tn65m7rjevwz5vjr4ai" {
-				//fmt.Printf("recordCount: %d\n", recordCount)
-				postRecord, err := UpdateOrInsertPost(db, OwnerId(ownerId), p)
-				if err != nil {
-					return fmt.Errorf("failed to update or insert post: %w", err)
-				}
-				postId := postRecord.Id
-				postUri := postRecord.Uri
-				fmt.Printf("postId: %s, postUri: %s\n", postId, postUri)
+			//fmt.Printf("recordCount: %d\n", recordCount)
+			postRecord, err := UpdateOrInsertPost(db, ownerId, p)
+			if err != nil {
+				return fmt.Errorf("failed to update or insert post: %w", err)
 			}
+			postId := postRecord.Id
+			postUri := postRecord.Uri
+			fmt.Printf("postId: %s, postUri: %s\n", postId, postUri)
 		}
 
 		if resp.Cursor != nil {
@@ -183,8 +201,8 @@ func doGetPosts(cCtx *cli.Context) (err error) {
 	return nil
 }
 
-func extractDidFromAtUri(atUri string) (did Did, err error) {
-	m := atDidRegexp.FindAllStringSubmatch(atUri, -1)
+func extractDidFromAtUri(atUri AtUri) (did Did, err error) {
+	m := atDidRegexp.FindAllStringSubmatch(string(atUri), -1)
 
 	// DID取得
 	did = Did("")
@@ -193,6 +211,18 @@ func extractDidFromAtUri(atUri string) (did Did, err error) {
 	}
 	did = Did(m[0][1])
 	return did, nil
+}
+
+func extractTidFromAtUri(atUri AtUri) (tid Tid, err error) {
+	m := atDidRegexp.FindAllStringSubmatch(string(atUri), -1)
+
+	// DID取得
+	tid = Tid("")
+	if len(m) == 0 {
+		return "", fmt.Errorf("invalid uri: %s", atUri)
+	}
+	tid = Tid(m[0][2])
+	return tid, nil
 }
 
 type embedBlock struct {
@@ -331,9 +361,14 @@ func setupPostRecord(p *bsky.FeedDefs_FeedViewPost, postCid Cid, postDid Did) (p
 	postRecord = &PostRecord{}
 	postView := p.Post
 	record := postView.Record.Val.(*bsky.FeedPost)
+	atUri := AtUri(postView.Uri)
 	postRecord.Cid = postCid
 	postRecord.Did = postDid
-	postRecord.Uri = AtUri(postView.Uri)
+	postRecord.Uri = atUri
+	postRecord.Tid, err = extractTidFromAtUri(atUri)
+	if err != nil {
+		return nil, err
+	}
 	postRecord.Text = record.Text
 	eb, err := inspectEmbedPost(postView.Embed, postDid, postCid)
 	postRecord.EmbedType = eb.EmbedType
@@ -399,9 +434,11 @@ func setupPostStatus(postView *bsky.FeedDefs_PostView, postRecord *PostRecord) (
 func setupPostHistory(p *bsky.FeedDefs_FeedViewPost, postRecord *PostRecord, owner OwnerId) (postHistory *PostHistory, err error) {
 	postHistory = &PostHistory{}
 	postFeedType := enum.PostFeedTypePostView
+	indexedAt := postRecord.CreatedAt
 	if p.Reason != nil {
 		if p.Reason.FeedDefs_ReasonRepost != nil {
 			postFeedType = enum.PostFeedTypeReasonRepost
+			indexedAt, err = timepWithError(p.Reason.FeedDefs_ReasonRepost.IndexedAt)
 		} else {
 			postFeedType = enum.PostFeedTypeUnknown
 		}
@@ -410,9 +447,10 @@ func setupPostHistory(p *bsky.FeedDefs_FeedViewPost, postRecord *PostRecord, own
 	postHistory.Cid = postRecord.Cid
 	postHistory.Did = postRecord.Did
 	postHistory.Uri = postRecord.Uri
+	postHistory.Tid = postRecord.Tid
 	postHistory.PostFeedType = postFeedType
 	postHistory.CreatedAt = postRecord.CreatedAt
-	postHistory.IndexedAt = postRecord.IndexedAt
+	postHistory.IndexedAt = indexedAt
 	postHistory.Text = postRecord.Text
 	return postHistory, nil
 }
@@ -477,7 +515,7 @@ func UpdateOrInsertPost(db *gorm.DB, owner OwnerId, p *bsky.FeedDefs_FeedViewPos
 	//postHistoryStatus := &PostHistoryStatus{}
 
 	postCid := Cid(postView.Cid)
-	postDid, err := extractDidFromAtUri(postView.Uri)
+	postDid, err := extractDidFromAtUri(AtUri(postView.Uri))
 	if err != nil {
 		return nil, fmt.Errorf("cannot extract did from uri: %w", err)
 	}
@@ -515,21 +553,22 @@ func UpdateOrInsertPost(db *gorm.DB, owner OwnerId, p *bsky.FeedDefs_FeedViewPos
 	err = db.Transaction(func(tx *gorm.DB) error {
 		// PostRecordが存在するかチェック
 		var count int64
-		postId := int64(0)
-		if err := tx.Model(&PostRecord{}).Where("cid = ? AND did = ?", postRecord.Cid, postRecord.Did).Count(&count).Error; err != nil {
+		idHash, err := calcPostRecordHash(postRecord)
+		postId := PostRecordId(idHash)
+		if err := tx.Model(&PostRecord{}).Where("id = ? OR (cid = ? AND did = ?)", postId, postRecord.Cid, postRecord.Did).Count(&count).Error; err != nil {
 			return err
 		}
 		if count == 0 {
 			// PostRecordが存在しない場合、新規にレコードを作成する
 			fmt.Printf("create new post record: %s\n", postRecord.Cid)
+			postRecord.Id = postId
 			if err := tx.Create(&postRecord).Error; err != nil {
 				return err
 			}
-			postId = postRecord.Id
 			fmt.Printf("Create post record id: %d\n", postId)
 		} else {
 			fmt.Printf("update post record: %s\n", count)
-			rows, err := tx.Model(&PostRecord{}).Where("cid = ? AND did = ?", postRecord.Cid, postRecord.Did).Rows()
+			rows, err := tx.Model(&PostRecord{}).Where("id = ? OR (cid = ? AND did = ?)", postId, postRecord.Cid, postRecord.Did).Rows()
 			if err != nil {
 				return err
 			}
@@ -547,7 +586,7 @@ func UpdateOrInsertPost(db *gorm.DB, owner OwnerId, p *bsky.FeedDefs_FeedViewPos
 				return fmt.Errorf("failed to close rows: %w", err)
 			}
 		}
-		if postId == 0 {
+		if len(postId) == 0 {
 			return fmt.Errorf("postId is 0")
 		}
 		// PostStatusが存在するかチェック
@@ -602,8 +641,15 @@ func UpdateOrInsertPost(db *gorm.DB, owner OwnerId, p *bsky.FeedDefs_FeedViewPos
 			}
 		}
 		// PostHistoryが存在するかチェック
-		postHistoryId := int64(0)
-		if err := tx.Model(&PostHistory{}).Where("owner = ? AND did = ? AND cid = ?", owner, postHistory.Did, postHistory.Cid).Count(&count).Error; err != nil {
+		postHistoryId, err := calcPostHistoryHash(postHistory)
+		if err != nil {
+			return err
+		}
+		if len(postHistoryId) == 0 {
+			return fmt.Errorf("postHistoryId is 0")
+		}
+		postHistory.Id = PostHistroyId(postHistoryId)
+		if err := tx.Model(&PostHistory{}).Where("id = ?", postHistoryId).Count(&count).Error; err != nil {
 			return err
 		}
 		if count == 0 {
@@ -611,9 +657,8 @@ func UpdateOrInsertPost(db *gorm.DB, owner OwnerId, p *bsky.FeedDefs_FeedViewPos
 			if err := tx.Create(&postHistory).Error; err != nil {
 				return err
 			}
-			postHistoryId = postHistory.Id
 		} else {
-			rows, err := tx.Model(&PostHistory{}).Where("owner = ? AND did = ? AND cid = ?", owner, postHistory.Did, postHistory.Cid).Rows()
+			rows, err := tx.Model(&PostHistory{}).Where("id = ?", postHistoryId).Rows()
 			if err != nil {
 				return err
 			}
@@ -623,14 +668,10 @@ func UpdateOrInsertPost(db *gorm.DB, owner OwnerId, p *bsky.FeedDefs_FeedViewPos
 				if err != nil {
 					return fmt.Errorf("failed to scan row: %w", err)
 				}
-				postHistoryId = postHi.Id
 			}
 			if err = rows.Close(); err != nil {
 				return fmt.Errorf("failed to close rows: %w", err)
 			}
-		}
-		if postHistoryId == 0 {
-			return fmt.Errorf("postHistoryId is 0")
 		}
 		// PostHistoryStatusが存在するかチェック
 		if err := tx.Model(&PostHistoryStatus{}).Where("id = ?", postHistoryId).Count(&count).Error; err != nil {
@@ -638,6 +679,7 @@ func UpdateOrInsertPost(db *gorm.DB, owner OwnerId, p *bsky.FeedDefs_FeedViewPos
 		}
 		if count == 0 {
 			// PostHistoryStatusが存在しない場合、新規にレコードを作成する
+			postHistoryStatus.Id = PostHistroyId(postHistoryId)
 			if err := tx.Create(&postHistoryStatus).Error; err != nil {
 				return err
 			}
@@ -651,9 +693,6 @@ func UpdateOrInsertPost(db *gorm.DB, owner OwnerId, p *bsky.FeedDefs_FeedViewPos
 				err := db.ScanRows(rows, &postSt)
 				if err != nil {
 					return fmt.Errorf("failed to scan row: %w", err)
-				}
-				if postSt.Owner != postHistoryStatus.Owner || postSt.Cid != postHistoryStatus.Cid || postSt.Uri != postHistoryStatus.Uri {
-					return fmt.Errorf("postHistoryId: %d postSt.Owner(%s) != postHistoryStatus.Owner(%s) || postHistoryStatus.Cid(%s) != postSt.Cid(%s) || postHistoryStatus.Uri(%s) != postSt.Uri(%s)", postHistoryId, postHistoryStatus.Owner, postSt.Owner, postHistoryStatus.Cid, postSt.Cid, postHistoryStatus.Uri, postSt.Uri)
 				}
 			}
 			if err = rows.Close(); err != nil {
@@ -675,6 +714,31 @@ func UpdateOrInsertPost(db *gorm.DB, owner OwnerId, p *bsky.FeedDefs_FeedViewPos
 		return nil, err
 	}
 	return postRecord, nil
+}
+func calcHash(str string) (hash string, err error) {
+	idHash := sha256.Sum256([]byte(str))
+	hash = hex.EncodeToString(idHash[:])
+	return hash, nil
+}
+
+func calcPostRecordHash(postRecord *PostRecord) (hash string, err error) {
+	createdAtUTC := postRecord.CreatedAt.UTC().Format(time.RFC3339)
+	idString := string(postRecord.Did) + string(postRecord.Cid) + createdAtUTC
+	id, err := calcHash(idString)
+	if err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+func calcPostHistoryHash(postHistory *PostHistory) (hash string, err error) {
+	indexdAtUTC := postHistory.IndexedAt.UTC().Format(time.RFC3339)
+	idString := string(postHistory.Owner) + string(postHistory.Did) + string(postHistory.Cid) + indexdAtUTC
+	id, err := calcHash(idString)
+	if err != nil {
+		return "", err
+	}
+	return id, nil
 }
 
 func getPost(cCtx *cli.Context, uri string) (postData []*bsky.FeedDefs_PostView, err error) {
