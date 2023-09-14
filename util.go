@@ -10,10 +10,13 @@ import (
 	"sort"
 	"time"
 
+	"github.com/henoya/sorascope/config"
+
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
 	"github.com/bluesky-social/indigo/api/bsky"
 	"github.com/bluesky-social/indigo/util/cliutil"
 	"github.com/bluesky-social/indigo/xrpc"
+
 	"github.com/fatih/color"
 
 	"github.com/urfave/cli/v2"
@@ -136,7 +139,10 @@ func stringp(s *string) string {
 }
 
 func makeXRPCC(cCtx *cli.Context) (*xrpc.Client, error) {
-	cfg := cCtx.App.Metadata["config"].(*config)
+	cfg, err := config.GetConfigFromCtx(cCtx)
+	if err != nil {
+		return nil, err
+	}
 
 	xrpcc := &xrpc.Client{
 		Client: cliutil.NewHttpClient(),
@@ -145,7 +151,7 @@ func makeXRPCC(cCtx *cli.Context) (*xrpc.Client, error) {
 	}
 
 	//fmt.Printf("config dir: %s...\n", cfg.dir)
-	auth, err := cliutil.ReadAuth(filepath.Join(cfg.dir, cfg.prefix+cfg.Handle+".auth"))
+	auth, err := cliutil.ReadAuth(filepath.Join(cfg.Dir, cfg.Prefix+cfg.Handle+".auth"))
 	if err == nil {
 		xrpcc.Auth = auth
 		xrpcc.Auth.AccessJwt = xrpcc.Auth.RefreshJwt
@@ -159,7 +165,7 @@ func makeXRPCC(cCtx *cli.Context) (*xrpc.Client, error) {
 
 			b, err := json.Marshal(xrpcc.Auth)
 			if err == nil {
-				if err := os.WriteFile(filepath.Join(cfg.dir, cfg.prefix+cfg.Handle+".auth"), b, 0600); err != nil {
+				if err := os.WriteFile(filepath.Join(cfg.Dir, cfg.Prefix+cfg.Handle+".auth"), b, 0600); err != nil {
 					return nil, fmt.Errorf("cannot write auth file: %w", err)
 				}
 			}
@@ -179,7 +185,7 @@ func makeXRPCC(cCtx *cli.Context) (*xrpc.Client, error) {
 
 		b, err := json.MarshalIndent(xrpcc.Auth, "", "  ")
 		if err == nil {
-			if err := os.WriteFile(filepath.Join(cfg.dir, cfg.prefix+cfg.Handle+".auth"), b, 0600); err != nil {
+			if err := os.WriteFile(filepath.Join(cfg.Dir, cfg.Prefix+cfg.Handle+".auth"), b, 0600); err != nil {
 				return nil, fmt.Errorf("cannot write auth file: %w", err)
 			}
 		}

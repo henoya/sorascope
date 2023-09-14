@@ -1,12 +1,13 @@
-package main
+package post
 
 import (
-	"github.com/henoya/sorascope/enum"
-	_ "github.com/mattn/go-sqlite3"
 	"time"
-)
 
-type StringArray []string
+	"github.com/henoya/sorascope/defs"
+	"github.com/henoya/sorascope/enum"
+
+	_ "github.com/mattn/go-sqlite3"
+)
 
 type Did string
 type AtUri string
@@ -17,6 +18,7 @@ type Tid string
 type PostRecordId string
 type PostHistroyId string
 type PostRecords []*PostRecord
+type Handle string
 
 type Image struct {
 	Id       int64  `json:"id" gorm:"type:integer;primary_key;auto_increment"`
@@ -47,14 +49,6 @@ type EmbedExternal struct {
 	Uri         string `json:"uri" gorm:"type:text;index:idx_embed_external_uri"`
 }
 
-//type EmbedRecord struct {
-//	ID  int64 `json:"id" gorm:"type:integer;primary_key"`
-//	Did Did   `json:"did" gorm:"type:text;index:idx_did"`
-//	Cid AtCid `json:"cid" gorm:"type:text;primary_key"`
-//}
-
-type Handle string
-
 type AuthorRecord struct {
 	Id             int64      `json:"id" gorm:"type:integer;primary_key"`
 	Did            Did        `json:"did" gorm:"type:text;index:idx_author_record_did,unique"`
@@ -69,40 +63,40 @@ type AuthorRecord struct {
 }
 
 type PostStatus struct {
-	Id          PostRecordId `json:"id" gorm:"type:text;primary_key"`
-	Cid         Cid          `json:"cid" gorm:"type:text;index:idx_post_status_cid"`
-	Did         Did          `json:"did" gorm:"type:text;index:idx_post_status_did"`
-	Uri         AtUri        `json:"uri" gorm:"type:text;index:idx_post_status_uri"`
-	LikeCount   int64        `json:"like_count" gorm:"type:integer"`
-	ReplyCount  int64        `json:"reply_count" gorm:"type:integer"`
-	RepostCount int64        `json:"repost_count" gorm:"type:integer"`
-	Labels      StringArray  `json:"labels" gorm:"type:text;serializer:json"`
-	Json        string       `json:"json" gorm:"type:text"`
-	CreatedAt   *time.Time   `json:"created_at" gorm:"type:datetime;index:idx_post_status_created_at"`
-	UpdatedAt   *time.Time   `json:"updated_at" gorm:"type:datetime;index:idx_post_status_updated_at"`
-	DeletedAr   *time.Time   `json:"deleted_ar" gorm:"type:datetime;nullable:index:idx_post_status_deleted_at"`
+	Id          PostRecordId     `json:"id" gorm:"type:text;primary_key"`
+	Cid         Cid              `json:"cid" gorm:"type:text;index:idx_post_status_cid"`
+	Did         Did              `json:"did" gorm:"type:text;index:idx_post_status_did"`
+	Uri         AtUri            `json:"uri" gorm:"type:text;index:idx_post_status_uri"`
+	LikeCount   int64            `json:"like_count" gorm:"type:integer"`
+	ReplyCount  int64            `json:"reply_count" gorm:"type:integer"`
+	RepostCount int64            `json:"repost_count" gorm:"type:integer"`
+	Labels      defs.StringArray `json:"labels" gorm:"type:text;serializer:json"`
+	Json        string           `json:"json" gorm:"type:text"`
+	CreatedAt   *time.Time       `json:"created_at" gorm:"type:datetime;index:idx_post_status_created_at"`
+	UpdatedAt   *time.Time       `json:"updated_at" gorm:"type:datetime;index:idx_post_status_updated_at"`
+	DeletedAr   *time.Time       `json:"deleted_ar" gorm:"type:datetime;nullable:index:idx_post_status_deleted_at"`
 }
 
 type PostRecord struct {
-	Id             PostRecordId   `json:"id" gorm:"type:text;primary_key"`
-	Cid            Cid            `json:"cid" gorm:"type:text;index:idx_post_record_cid"`
-	Did            Did            `json:"did" gorm:"type:text;index:idx_post_record_did"`
-	Uri            AtUri          `json:"uri" gorm:"type:text;index:idx_post_record_uri"`
-	Tid            Tid            `json:"tid" gorm:"type:text;index:idx_post_record_tid"`
-	AuthorRevision int            `json:"author_revision" gorm:"type:integer"`
-	CreatedAt      *time.Time     `json:"created_at" gorm:"type:datetime;index:idx_post_record_created_at"`
-	IndexedAt      *time.Time     `json:"indexed_at" gorm:"type:datetime;index:idx_post_record_indexed_at"`
-	Text           string         `json:"text" gorm:"type:text"`
-	PostType       enum.PostType  `json:"type" gorm:"type:integer"`
-	EmbedType      enum.EmbedType `json:"embed_type" gorm:"type:text"`
-	EmbedDid       Did            `json:"embed_did" gorm:"type:text;nullable"`
-	EmbedCid       Cid            `json:"embed_cid" gorm:"type:text;nullable"`
-	EmbedUri       AtUri          `json:"embed_uri" gorm:"type:text"`
-	EmbedAuthorDid Did            `json:"embed_author_did" gorm:"type:text"`
-	EmbedBlocked   bool           `json:"embed_blocked" gorm:"type:boolean"`
-	EmbedName      string         `json:"embed_name" gorm:"type:text"`
-	Langs          StringArray    `json:"langs" gorm:"type:text;serializer:json"`
-	DeletedAr      *time.Time     `json:"deleted_ar" gorm:"type:datetime;nullable;index:idx_post_record_deleted_at"`
+	Id             PostRecordId     `json:"id" gorm:"type:text;primary_key"`
+	Cid            Cid              `json:"cid" gorm:"type:text;index:idx_post_record_cid"`
+	Did            Did              `json:"did" gorm:"type:text;index:idx_post_record_did"`
+	Uri            AtUri            `json:"uri" gorm:"type:text;index:idx_post_record_uri"`
+	Tid            Tid              `json:"tid" gorm:"type:text;index:idx_post_record_tid"`
+	AuthorRevision int              `json:"author_revision" gorm:"type:integer"`
+	CreatedAt      *time.Time       `json:"created_at" gorm:"type:datetime;index:idx_post_record_created_at"`
+	IndexedAt      *time.Time       `json:"indexed_at" gorm:"type:datetime;index:idx_post_record_indexed_at"`
+	Text           string           `json:"text" gorm:"type:text"`
+	PostType       enum.PostType    `json:"type" gorm:"type:integer"`
+	EmbedType      enum.EmbedType   `json:"embed_type" gorm:"type:text"`
+	EmbedDid       Did              `json:"embed_did" gorm:"type:text;nullable"`
+	EmbedCid       Cid              `json:"embed_cid" gorm:"type:text;nullable"`
+	EmbedUri       AtUri            `json:"embed_uri" gorm:"type:text"`
+	EmbedAuthorDid Did              `json:"embed_author_did" gorm:"type:text"`
+	EmbedBlocked   bool             `json:"embed_blocked" gorm:"type:boolean"`
+	EmbedName      string           `json:"embed_name" gorm:"type:text"`
+	Langs          defs.StringArray `json:"langs" gorm:"type:text;serializer:json"`
+	DeletedAr      *time.Time       `json:"deleted_ar" gorm:"type:datetime;nullable;index:idx_post_record_deleted_at"`
 }
 
 type PostHistoryStatus struct {

@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"encoding/json"
@@ -7,9 +7,26 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/urfave/cli/v2"
 )
 
-func configDir() (string, error) {
+const AppName = "sorascope"
+
+const Version = "0.0.1"
+
+var Revision = "HEAD"
+
+type Config struct {
+	Host     string `json:"host"`
+	Handle   string `json:"handle"`
+	Password string `json:"password"`
+	Dir      string
+	Verbose  bool
+	Prefix   string
+}
+
+func ConfigDir() (string, error) {
 	switch runtime.GOOS {
 	case "darwin":
 		dir, err := os.UserHomeDir()
@@ -23,8 +40,26 @@ func configDir() (string, error) {
 	}
 }
 
-func loadConfig(profile string) (*config, string, error) {
-	dir, err := configDir()
+func GetConfigFromCtx(cCtx *cli.Context) (cfg *Config, err error) {
+	config, ok := cCtx.App.Metadata["config"]
+	if !ok {
+		return nil, fmt.Errorf("config not found")
+	}
+	cfg = config.(*Config)
+	return cfg, nil
+}
+
+func GetConfigFpFromCtx(cCtx *cli.Context) (fp string, err error) {
+	filePath, ok := cCtx.App.Metadata["path"]
+	if !ok {
+		return "", fmt.Errorf("config not found")
+	}
+	fp = filePath.(string)
+	return fp, nil
+}
+
+func LoadConfig(profile string) (*Config, string, error) {
+	dir, err := ConfigDir()
 	if err != nil {
 		return nil, "", err
 	}
@@ -53,7 +88,7 @@ func loadConfig(profile string) (*config, string, error) {
 	if err != nil {
 		return nil, fp, fmt.Errorf("cannot load config file: %w", err)
 	}
-	var cfg config
+	var cfg Config
 	err = json.Unmarshal(b, &cfg)
 	if err != nil {
 		return nil, fp, fmt.Errorf("cannot load config file: %w", err)
@@ -61,6 +96,6 @@ func loadConfig(profile string) (*config, string, error) {
 	if cfg.Host == "" {
 		cfg.Host = "https://bsky.social"
 	}
-	cfg.dir = dir
+	cfg.Dir = dir
 	return &cfg, fp, nil
 }

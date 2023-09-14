@@ -4,16 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	comatproto "github.com/bluesky-social/indigo/api/atproto"
 	"io/ioutil"
 	"os"
+
+	"github.com/henoya/sorascope/config"
+
+	comatproto "github.com/bluesky-social/indigo/api/atproto"
 
 	"github.com/urfave/cli/v2"
 )
 
 func doLogin(cCtx *cli.Context) error {
 	fp, _ := cCtx.App.Metadata["path"].(string)
-	var cfg config
+	var cfg config.Config
 	cfg.Host = cCtx.String("host")
 	cfg.Handle = cCtx.Args().Get(0)
 	cfg.Password = cCtx.Args().Get(1)
