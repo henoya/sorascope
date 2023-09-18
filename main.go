@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/henoya/sorascope/account"
 	"github.com/henoya/sorascope/config"
+	"github.com/henoya/sorascope/user"
 	"os"
 
 	"github.com/urfave/cli/v2"
@@ -66,11 +66,11 @@ func main() {
 					&cli.StringFlag{Name: "app-pass", Aliases: []string{"P"}, Required: true},
 				},
 				HelpName: "add-user",
-				Action:   account.DoAddUser,
+				Action:   user.DoAddUser,
 				Before: func(cCtx *cli.Context) error {
 					handle := cCtx.String("handle")
 					did := cCtx.String("did")
-					if handle == "" || did == "" {
+					if handle == "" && did == "" {
 						return fmt.Errorf("Need handle or did parameter")
 					}
 					return nil
@@ -105,6 +105,11 @@ func main() {
 			if profile != "" {
 				cfg.Prefix = profile + "-"
 			}
+			db, err := InitDBConnection()
+			if err != nil {
+				return err
+			}
+			cCtx.App.Metadata["db"] = db
 			return nil
 		},
 	}

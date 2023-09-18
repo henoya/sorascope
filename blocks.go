@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/bluesky-social/indigo/api/atproto"
+	"github.com/henoya/sorascope/util"
+
 	//"github.com/bluesky-social/indigo/api/bsky"
 	"github.com/urfave/cli/v2"
 	//gorm.io/gorm"
@@ -17,7 +19,7 @@ func doGetBlocks(cCtx *cli.Context) (err error) {
 		return cli.ShowSubcommandHelp(cCtx)
 	}
 
-	xrpcc, err := makeXRPCC(cCtx)
+	xrpcc, err := util.MakeXRPCC(cCtx)
 	if err != nil {
 		return fmt.Errorf("cannot create client: %w", err)
 	}
@@ -37,7 +39,7 @@ func doGetBlocks(cCtx *cli.Context) (err error) {
 			var collection string = "app.bsky.graph.block"
 			resp, err := atproto.RepoListRecords(context.TODO(), xrpcc, collection, cursor, n, handle, true, "", "")
 			//func GraphGetBlocks(ctx context.Context, c *xrpc.Client, cursor string, limit int64) (*GraphGetBlocks_Output, error) {
-				//resp, err := bsky.FeedGetAuthorFeed(context.TODO(), xrpcc, handle, cursor, n)
+			//resp, err := bsky.FeedGetAuthorFeed(context.TODO(), xrpcc, handle, cursor, n)
 			if err != nil {
 				return fmt.Errorf("cannot get author feed: %w", err)
 			}

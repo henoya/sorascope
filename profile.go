@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/henoya/sorascope/util"
 	"io/ioutil"
 	"os"
 
@@ -35,7 +36,7 @@ func doLogin(cCtx *cli.Context) error {
 }
 
 func doShowSession(cCtx *cli.Context) error {
-	xrpcc, err := makeXRPCC(cCtx)
+	xrpcc, err := util.MakeXRPCC(cCtx)
 	if err != nil {
 		return fmt.Errorf("cannot create client: %w", err)
 	}
@@ -51,7 +52,7 @@ func doShowSession(cCtx *cli.Context) error {
 	}
 
 	fmt.Printf("Did: %s\n", session.Did)
-	fmt.Printf("Email: %s\n", stringp(session.Email))
+	fmt.Printf("Email: %s\n", util.Stringp(session.Email))
 	fmt.Printf("Handle: %s\n", session.Handle)
 	return nil
 }

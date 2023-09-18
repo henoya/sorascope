@@ -1,4 +1,4 @@
-package main
+package util
 
 import (
 	"context"
@@ -27,8 +27,8 @@ func printPost(p *bsky.FeedDefs_PostView) {
 	color.Set(color.FgHiRed)
 	fmt.Print(p.Author.Handle)
 	color.Set(color.Reset)
-	fmt.Printf(" [%s]", stringp(p.Author.DisplayName))
-	fmt.Printf(" (%s)\n", timep(rec.CreatedAt).Format(time.RFC3339))
+	fmt.Printf(" [%s]", Stringp(p.Author.DisplayName))
+	fmt.Printf(" (%s)\n", Timep(rec.CreatedAt).Format(time.RFC3339))
 	if rec.Entities != nil {
 		sort.Slice(rec.Entities, func(i, j int) bool {
 			return rec.Entities[i].Index.Start < rec.Entities[j].Index.Start
@@ -70,9 +70,9 @@ func printPost(p *bsky.FeedDefs_PostView) {
 		}
 	}
 	fmt.Printf(" 👍(%d)⚡(%d)↩️ (%d)\n",
-		int64p(p.LikeCount),
-		int64p(p.RepostCount),
-		int64p(p.ReplyCount),
+		Int64p(p.LikeCount),
+		Int64p(p.RepostCount),
+		Int64p(p.ReplyCount),
 	)
 	if rec.Reply != nil && rec.Reply.Parent != nil {
 		fmt.Print(" > ")
@@ -95,7 +95,7 @@ var formats = []string{
 	"2006-01-02T15:04:05-07:00",
 }
 
-func timep(s string) time.Time {
+func Timep(s string) time.Time {
 	for _, f := range formats {
 		t, err := time.Parse(f, s)
 		if err == nil {
@@ -105,7 +105,7 @@ func timep(s string) time.Time {
 	panic(s)
 }
 
-func timepWithError(s string) (t *time.Time, err error) {
+func TimepWithError(s string) (t *time.Time, err error) {
 	for _, f := range formats {
 		t, err := time.Parse(f, s)
 		if err == nil {
@@ -124,21 +124,21 @@ func IsNilType(x interface{}) bool {
 	}
 }
 
-func int64p(i *int64) int64 {
+func Int64p(i *int64) int64 {
 	if i == nil {
 		return 0
 	}
 	return *i
 }
 
-func stringp(s *string) string {
+func Stringp(s *string) string {
 	if s == nil {
 		return ""
 	}
 	return *s
 }
 
-func makeXRPCC(cCtx *cli.Context) (*xrpc.Client, error) {
+func MakeXRPCC(cCtx *cli.Context) (*xrpc.Client, error) {
 	cfg, err := config.GetConfigFromCtx(cCtx)
 	if err != nil {
 		return nil, err
@@ -189,6 +189,15 @@ func makeXRPCC(cCtx *cli.Context) (*xrpc.Client, error) {
 				return nil, fmt.Errorf("cannot write auth file: %w", err)
 			}
 		}
+	}
+
+	return xrpcc, nil
+}
+
+func MakeBareXRPCC(host string) (*xrpc.Client, error) {
+	xrpcc := &xrpc.Client{
+		Client: cliutil.NewHttpClient(),
+		Host:   host,
 	}
 
 	return xrpcc, nil
