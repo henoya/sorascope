@@ -4,16 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	comatproto "github.com/bluesky-social/indigo/api/atproto"
+	"github.com/henoya/sorascope/util"
 	"io/ioutil"
 	"os"
+
+	"github.com/henoya/sorascope/config"
+
+	comatproto "github.com/bluesky-social/indigo/api/atproto"
 
 	"github.com/urfave/cli/v2"
 )
 
 func doLogin(cCtx *cli.Context) error {
 	fp, _ := cCtx.App.Metadata["path"].(string)
-	var cfg config
+	var cfg config.Config
 	cfg.Host = cCtx.String("host")
 	cfg.Handle = cCtx.Args().Get(0)
 	cfg.Password = cCtx.Args().Get(1)
@@ -32,7 +36,7 @@ func doLogin(cCtx *cli.Context) error {
 }
 
 func doShowSession(cCtx *cli.Context) error {
-	xrpcc, err := makeXRPCC(cCtx)
+	xrpcc, err := util.MakeXRPCC(cCtx)
 	if err != nil {
 		return fmt.Errorf("cannot create client: %w", err)
 	}
@@ -48,7 +52,7 @@ func doShowSession(cCtx *cli.Context) error {
 	}
 
 	fmt.Printf("Did: %s\n", session.Did)
-	fmt.Printf("Email: %s\n", stringp(session.Email))
+	fmt.Printf("Email: %s\n", util.Stringp(session.Email))
 	fmt.Printf("Handle: %s\n", session.Handle)
 	return nil
 }
