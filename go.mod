@@ -8,7 +8,7 @@ require (
 	github.com/bluesky-social/indigo v0.0.0-20230913175109-8a590beccaf5
 	github.com/fatih/color v1.15.0
 	github.com/mattn/go-sqlite3 v1.14.15
-	github.com/urfave/cli/v2 v2.25.7
+	github.com/urfave/cli/v2 v2.27.1
 	github.com/whyrusleeping/cbor-gen v0.0.0-20230818171029-f91ae536ca25
 	gorm.io/driver/sqlite v1.5.0
 	gorm.io/gorm v1.25.1
