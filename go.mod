@@ -10,8 +10,8 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.18
 	github.com/urfave/cli/v2 v2.25.7
 	github.com/whyrusleeping/cbor-gen v0.0.0-20230818171029-f91ae536ca25
-	gorm.io/driver/sqlite v1.5.0
-	gorm.io/gorm v1.25.5
+	gorm.io/driver/sqlite v1.5.4
+	gorm.io/gorm v1.25.2-0.20230530020048-26663ab9bf55
 )
 
 require (
