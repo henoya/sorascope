@@ -21,16 +21,28 @@ func main() {
 		},
 		Commands: []*cli.Command{
 			{
-				Name:        "get-posts",
+				Name:        "get-all-posts",
 				Description: "Get account's all posts",
-				Usage:       "get-posts -H handle [-n number] [--json]",
+				Usage:       "get-all-posts -H handle [-n number] [--json]",
+				UsageText:   config.AppName + " get-all-posts",
+				Flags: []cli.Flag{
+					&cli.StringFlag{Name: "handle", Aliases: []string{"H"}, Required: true, Usage: "user handle or DID"},
+					&cli.IntFlag{Name: "n", Value: 30, Usage: "number of items"},
+					&cli.BoolFlag{Name: "json", Usage: "output JSON"},
+				},
+				Action: doGetAllPosts,
+			},
+			{
+				Name:        "get-update-posts",
+				Description: "Get account's only updated posts",
+				Usage:       "get-update-posts -H handle [-n number] [--json]",
 				UsageText:   config.AppName + " get-posts",
 				Flags: []cli.Flag{
 					&cli.StringFlag{Name: "handle", Aliases: []string{"H"}, Required: true, Usage: "user handle or DID"},
 					&cli.IntFlag{Name: "n", Value: 30, Usage: "number of items"},
 					&cli.BoolFlag{Name: "json", Usage: "output JSON"},
 				},
-				Action: doGetPosts,
+				Action: doGetAllPosts,
 			},
 			{
 				Name:        "get-blocks",
