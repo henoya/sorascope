@@ -133,7 +133,7 @@ func AddUser(cCtx *cli.Context, paramHost string, paramDid string, paramHandle s
 		did = typedef.Did(paramDid)
 		s := cliutil.GetDidResolver(cCtx)
 		phr := &comatapi.ProdHandleResolver{}
-		handleStr, serviceEndpoint, err := comatapi.ResolveDidToHandle(ctx, xrpcc, s, phr, paramDid)
+		handleStr, serviceEndpoint, err := comatapi.ResolveDidToHandle(ctx, s, phr, paramDid)
 		if err != nil {
 			return "", fmt.Errorf("failed to resolve handle: %w", err)
 		}

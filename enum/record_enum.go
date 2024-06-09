@@ -1,6 +1,6 @@
 package enum
 
-//go:generate enumer -type PostType -json
+//go:generate go run github.com/alvaroloes/enumer -type PostType -json
 type PostType int // defined type
 const (
 	PostTypeUnknown PostType = iota - 1

@@ -27,3 +27,6 @@ go.work
 
 # sqlite3 db file
 *.db
+
+# Output of the go build command
+sorascope

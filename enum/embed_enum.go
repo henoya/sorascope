@@ -1,6 +1,6 @@
 package enum
 
-//go:generate enumer -type EmbedType -json
+//go:generate go run github.com/alvaroloes/enumer -type EmbedType -json
 type EmbedType int // defined type
 const (
 	EmbedUnknown EmbedType = iota - 1

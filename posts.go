@@ -49,7 +49,7 @@ func doGetAllPosts(cCtx *cli.Context) (err error) {
 		handleDid = typedef.Did(xrpcc.Auth.Did)
 		s := cliutil.GetDidResolver(cCtx)
 		phr := &comatapi.ProdHandleResolver{}
-		handle, _, err = comatapi.ResolveDidToHandle(ctx, xrpcc, s, phr, string(handleDid))
+		handle, _, err = comatapi.ResolveDidToHandle(ctx, s, phr, string(handleDid))
 		if err != nil {
 			return fmt.Errorf("failed to resolve handle: %w", err)
 		}
