@@ -11,7 +11,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/whyrusleeping/cbor-gen v0.0.0-20230818171029-f91ae536ca25
 	gorm.io/driver/sqlite v1.5.4
-	gorm.io/gorm v1.25.7
+	gorm.io/gorm v1.25.9
 )
 
 require (
