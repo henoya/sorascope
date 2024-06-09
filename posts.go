@@ -24,7 +24,7 @@ import (
 
 var atDidRegexp = regexp.MustCompile(`at://(did:plc:[0-9a-z]+)/app\.bsky\.feed\.post/([0-9a-z]+)`)
 
-func doGetPosts(cCtx *cli.Context) (err error) {
+func doGetAllPosts(cCtx *cli.Context) (err error) {
 	if cCtx.Args().Present() {
 		return cli.ShowSubcommandHelp(cCtx)
 	}
@@ -101,18 +101,21 @@ func doGetPosts(cCtx *cli.Context) (err error) {
 				err = nil
 			}
 			_ = rawJson
-			fmt.Println(string(rawJson))
+			//fmt.Println(string(rawJson))
 
 			// PostRecordに記録
 			recordCount = recordCount + 1
 			//fmt.Printf("recordCount: %d\n", recordCount)
-			postRecord, err := UpdateOrInsertPost(db, ownerId, p)
+			postRecord, updated, err := UpdateOrInsertPost(db, ownerId, p)
 			if err != nil {
 				return fmt.Errorf("failed to update or insert post: %w", err)
 			}
 			postId := postRecord.Id
 			postUri := postRecord.Uri
-			fmt.Printf("postId: %s, postUri: %s\n", postId, postUri)
+			if updated {
+				fmt.Println(string(rawJson))
+				fmt.Printf("postId: %s, postUri: %s\n", postId, postUri)
+			}
 		}
 
 		if resp.Cursor != nil {
@@ -495,12 +498,13 @@ func setupAuthorRecord(p *bsky.FeedDefs_FeedViewPost) (authorRecord *postrecord.
 	return authorRecord, nil
 }
 
-func UpdateOrInsertPost(db *gorm.DB, owner typedef.OwnerId, p *bsky.FeedDefs_FeedViewPost) (postRecord *postrecord.PostRecord, err error) {
+func UpdateOrInsertPost(db *gorm.DB, owner typedef.OwnerId, p *bsky.FeedDefs_FeedViewPost) (postRecord *postrecord.PostRecord, updated bool, err error) {
+	updated = false
 	if db == nil {
-		return nil, fmt.Errorf("db is nil")
+		return nil, updated, fmt.Errorf("db is nil")
 	}
 	if p == nil {
-		return nil, fmt.Errorf("post is nil")
+		return nil, updated, fmt.Errorf("post is nil")
 	}
 	postView := p.Post
 	//record := postView.Record.Val.(*bsky.FeedPost)
@@ -515,19 +519,19 @@ func UpdateOrInsertPost(db *gorm.DB, owner typedef.OwnerId, p *bsky.FeedDefs_Fee
 	postCid := typedef.Cid(postView.Cid)
 	postDid, err := extractDidFromAtUri(typedef.AtUri(postView.Uri))
 	if err != nil {
-		return nil, fmt.Errorf("cannot extract did from uri: %w", err)
+		return nil, updated, fmt.Errorf("cannot extract did from uri: %w", err)
 	}
 
 	// PostRecord の設定
 	postRecord, err = setupPostRecord(p, postCid, postDid)
 	if err != nil {
-		return nil, fmt.Errorf("failed to inspect post record: %w", err)
+		return nil, updated, fmt.Errorf("failed to inspect post record: %w", err)
 	}
 
 	// PostStatus の設定
 	postStatus, err := setupPostStatus(postView, postRecord)
 	if err != nil {
-		return nil, fmt.Errorf("failed to inspect post status: %w", err)
+		return nil, updated, fmt.Errorf("failed to inspect post status: %w", err)
 	}
 	postStatus.Json = string(rawJson)
 
@@ -537,13 +541,13 @@ func UpdateOrInsertPost(db *gorm.DB, owner typedef.OwnerId, p *bsky.FeedDefs_Fee
 	// postHistoryStatus の設定
 	postHistoryStatus, err := setupPostHistoryStatus(p, postRecord, owner)
 	if err != nil {
-		return nil, fmt.Errorf("failed to inspect post history status: %w", err)
+		return nil, updated, fmt.Errorf("failed to inspect post history status: %w", err)
 	}
 
 	// AuthorRecord の設定
 	authorRecord, err := setupAuthorRecord(p)
 	if err != nil {
-		return nil, fmt.Errorf("failed to inspect author record: %w", err)
+		return nil, updated, fmt.Errorf("failed to inspect author record: %w", err)
 	}
 	_ = authorRecord
 
@@ -563,22 +567,23 @@ func UpdateOrInsertPost(db *gorm.DB, owner typedef.OwnerId, p *bsky.FeedDefs_Fee
 			if err := tx.Create(&postRecord).Error; err != nil {
 				return err
 			}
+			updated = true
 			fmt.Printf("Create post record id: %d\n", postId)
 		} else {
-			fmt.Printf("update post record: %s\n", count)
+			//fmt.Printf("update post record: %s\n", count)
 			rows, err := tx.Model(&postrecord.PostRecord{}).Where("id = ? OR (cid = ? AND did = ?)", postId, postRecord.Cid, postRecord.Did).Rows()
 			if err != nil {
 				return err
 			}
 			for rows.Next() {
-				fmt.Printf("Select post record cid: %s  did:%s\n", postRecord.Cid, postRecord.Did)
+				//fmt.Printf("Select post record cid: %s  did:%s\n", postRecord.Cid, postRecord.Did)
 				var post postrecord.PostRecord
 				err := db.ScanRows(rows, &post)
 				if err != nil {
 					return fmt.Errorf("failed to scan row: %w", err)
 				}
 				postId = post.Id
-				fmt.Printf("Get post record id: %d\n", postId)
+				//fmt.Printf("Get post record id: %d\n", postId)
 			}
 			if err = rows.Close(); err != nil {
 				return fmt.Errorf("failed to close rows: %w", err)
@@ -597,6 +602,7 @@ func UpdateOrInsertPost(db *gorm.DB, owner typedef.OwnerId, p *bsky.FeedDefs_Fee
 			if err := tx.Create(&postStatus).Error; err != nil {
 				return err
 			}
+			updated = true
 		} else {
 			rows, err := tx.Model(&postrecord.PostStatus{}).Where("id = ?", postId).Rows()
 			if err != nil {
@@ -636,6 +642,7 @@ func UpdateOrInsertPost(db *gorm.DB, owner typedef.OwnerId, p *bsky.FeedDefs_Fee
 				if err := tx.Save(&postSt).Error; err != nil {
 					return err
 				}
+				updated = true
 			}
 		}
 		// PostHistoryが存在するかチェック
@@ -655,6 +662,7 @@ func UpdateOrInsertPost(db *gorm.DB, owner typedef.OwnerId, p *bsky.FeedDefs_Fee
 			if err := tx.Create(&postHistory).Error; err != nil {
 				return err
 			}
+			updated = true
 		} else {
 			rows, err := tx.Model(&postrecord.PostHistory{}).Where("id = ?", postHistoryId).Rows()
 			if err != nil {
@@ -681,6 +689,7 @@ func UpdateOrInsertPost(db *gorm.DB, owner typedef.OwnerId, p *bsky.FeedDefs_Fee
 			if err := tx.Create(&postHistoryStatus).Error; err != nil {
 				return err
 			}
+			updated = true
 		} else {
 			rows, err := tx.Model(&postrecord.PostHistoryStatus{}).Where("id = ?", postHistoryId).Rows()
 			if err != nil {
@@ -702,17 +711,22 @@ func UpdateOrInsertPost(db *gorm.DB, owner typedef.OwnerId, p *bsky.FeedDefs_Fee
 				if err := tx.Save(&postSt).Error; err != nil {
 					return err
 				}
+				updated = true
 			}
+		}
+		if postRecord.Id == "" {
+			postRecord.Id = postId
 		}
 
 		// return nil will commit the whole transaction
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, updated, err
 	}
-	return postRecord, nil
+	return postRecord, updated, nil
 }
+
 func calcHash(str string) (hash string, err error) {
 	idHash := sha256.Sum256([]byte(str))
 	hash = hex.EncodeToString(idHash[:])
