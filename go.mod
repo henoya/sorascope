@@ -9,7 +9,7 @@ require (
 	github.com/fatih/color v1.17.0
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/urfave/cli/v2 v2.27.2
-	github.com/whyrusleeping/cbor-gen v0.1.1
+	github.com/whyrusleeping/cbor-gen v0.1.2
 	gorm.io/driver/sqlite v1.5.5
 	gorm.io/gorm v1.25.10
 )
