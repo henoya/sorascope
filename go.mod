@@ -11,7 +11,7 @@ require (
 	github.com/urfave/cli/v2 v2.27.4
 	github.com/whyrusleeping/cbor-gen v0.1.2
 	gorm.io/driver/sqlite v1.5.6
-	gorm.io/gorm v1.25.11
+	gorm.io/gorm v1.25.12
 )
 
 require (
