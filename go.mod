@@ -7,7 +7,7 @@ toolchain go1.22.3
 require (
 	github.com/bluesky-social/indigo v0.0.0-20240604221852-9815da964ae1
 	github.com/fatih/color v1.18.0
-	github.com/mattn/go-sqlite3 v1.14.24
+	github.com/mattn/go-sqlite3 v1.14.28
 	github.com/urfave/cli/v2 v2.27.5
 	github.com/whyrusleeping/cbor-gen v0.2.0
 	gorm.io/driver/sqlite v1.5.7
