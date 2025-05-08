@@ -1,8 +1,7 @@
 module github.com/henoya/sorascope
 
 go 1.22
-
-toolchain go1.22.3
+toolchain go1.24.1
 
 require (
 	github.com/bluesky-social/indigo v0.0.0-20240604221852-9815da964ae1
@@ -87,10 +86,10 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-	golang.org/x/crypto v0.31.0 // indirect
-	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
+	golang.org/x/crypto v0.35.0 // indirect
+	golang.org/x/sync v0.11.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
 	gorm.io/driver/postgres v1.5.7 // indirect
